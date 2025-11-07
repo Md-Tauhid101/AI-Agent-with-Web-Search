@@ -1,62 +1,54 @@
 import os
-from pinecone import Pinecone, ServerlessSpec
-from langchain_pinecone import PineconeVectorStore
+from dotenv import load_dotenv
+from pinecone import Pinecone as PineconeClient, ServerlessSpec
+from langchain_pinecone import Pinecone as PineconeVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from config import PINECONE_API_KEY, HUGGINGFACE_EMBEDDINGS, PINECONE_INDEX_NAME
 
-from config import PINECONE_API_KEY
+# Load .env if not already done
+load_dotenv()
 
-# set env var for pinecone
-PINECONE_API_KEY = os.environ['PINECONE_API_KEY']
-INDEX_NAME = os.environ['PINECONE_INDEX_NAME']
+# Validate env variables
+if not PINECONE_API_KEY:
+    raise ValueError("PINECONE_API_KEY not set in config.py or environment")
 
-# initialize pinecone for pinecone
-pc = Pinecone(api_key = PINECONE_API_KEY)
-# define embedding models
-embeddings = HuggingFaceEmbeddings(model_name = "sentance-transformers/all-MiniLM-L6-v2")
+# Initialize Pinecone client
+pc = PineconeClient(api_key=PINECONE_API_KEY)
+INDEX_NAME = PINECONE_INDEX_NAME
 
+# Define embeddings
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# retriever function
 def get_retriever():
-    """
-        Initializes and return the pinecone vector store retriever
-    """
-    if INDEX_NAME not in pc.list_indexes().names():
-        print("Creating new inddex")
+    """Initializes and returns the Pinecone vector store retriever"""
+    existing_indexes = [index.name for index in pc.list_indexes()]
+    if INDEX_NAME not in existing_indexes:
+        print("Creating new index...")
         pc.create_index(
-            name = INDEX_NAME,
-            dimension = 384,
-            metric = 'cosine',
-            spec = ServerlessSpec(cloud='aws', region='us-east-1')
+            name=INDEX_NAME,
+            dimension=384,
+            metric='cosine',
+            spec=ServerlessSpec(cloud='aws', region='us-east-1')
         )
-        print("Created pinecone index")
-    
-    vector_store = PineconeVectorStore(index_name=INDEX_NAME, embeddings = embeddings)
+        print("Created Pinecone index.")
+
+    vector_store = PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
     return vector_store.as_retriever()
 
-# upload doucuments to vector DB
-def add_document_to_vectorstore(text_content:str):
-    """
-        Adds a single text document to the Pinecone vector store.
-        Splits the text into chunks before embedding and upserting.
-    """
+def add_document_to_vectorstore(text_content: str):
+    """Adds a text document to the Pinecone vector store."""
     if not text_content:
-        raise ValueError("Document content not found")
-    
-    # Create document chunks
-    text_spitter = RecursiveCharacterTextSplitter(
-        chunk = 1000,
-        chunk_overlap = 200,
-        add_start_index = True
+        raise ValueError("Document content not provided")
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        add_start_index=True
     )
+    documents = text_splitter.create_documents([text_content])
+    print("Splitting document into chunks for indexing...")
 
-    # create langchain document objects from the raw text
-    documents = text_spitter.create_documents([text_content])
-    print("Splitting document into chunk for indexing...")
-
-    # create vector store instance to add documents
-    vectorstore = PineconeVectorStore(index_name = INDEX_NAME, embeddings = embeddings)
-
-    # Add documents to vectorstore
+    vectorstore = PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
     vectorstore.add_documents(documents)
-    print("Successfully added chunks to pinecone vectorstore")
+    print("Successfully added chunks to Pinecone vectorstore.")

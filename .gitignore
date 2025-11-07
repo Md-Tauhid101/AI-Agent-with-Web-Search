@@ -1,11 +1,56 @@
-# Python-generated files
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
 build/
 dist/
 wheels/
-*.egg-info
-.env
+*.egg-info/
+*.egg
 
 # Virtual environments
-.ai_web_search_env/
+venv/
+.env/
+.env*/
+env/
+env*/
+ai_web_search_env/
+
+# Python virtual environment folders
+.venv/
+.venv*/
+venv*/
+ENV/
+env.bak/
+venv.bak/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+
+# Local data
+*.log
