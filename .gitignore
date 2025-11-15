@@ -16,7 +16,7 @@ venv/
 .env*/
 env/
 env*/
-ai_web_search_env/
+ai_agent_env/
 
 # Python virtual environment folders
 .venv/
